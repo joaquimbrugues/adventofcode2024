@@ -1,0 +1,16 @@
+#!/bin/sh
+# Create a Cargo project with name "day${1}"
+# Copy template.rs to [folder]/src/main.rs
+# Create files test.txt and input.txt and edit them in succession
+
+DIRNAME="day${1}"
+
+if [ -z "$1" ] || [ ! -f template.rs ] || [ -d "$DIRNAME" ]; then
+	printf "\e[1mUsage:\e[0m\t./day NUMBER\n\t\e[1m1-\e[0m Creates a Cargo project with name \"day{NUMBER}\"\n\t\e[1m2-\e[0m Copies template.rs to day{NUMBER}/src/main.rs\n\t\e[1m3-\e[0m Opens an editor to edit day{NUMBER}/test.txt, day{NUMBER}/input.txt and day{NUMBER}/src/main.\n\e[1mRequires\e[0m the file template.rs\n"
+	exit 0
+fi
+
+cargo new "$DIRNAME" 2>/dev/null
+cp template.rs $DIRNAME/src/main.rs
+
+$EDITOR $DIRNAME/test.txt $DIRNAME/input.txt $DIRNAME/src/main.rs
