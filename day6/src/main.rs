@@ -102,12 +102,14 @@ fn run2(input: &str) -> usize {
     // Find possible obstacle locations
     let (mut pos, mut dir) = guard_path.pop_front().unwrap();
     let start = pos;
+    let mut prev_path = HashSet::with_capacity(walkable.len());
     let mut obstacles = HashSet::with_capacity(walkable.len());
     obstacles.insert(start);
     while let Some((obstacle, ndir)) = guard_path.pop_front() {
-        // Check that the starting position does not coincide with the new obstacle
+        prev_path.insert(pos);
+        // Check that the obstacle is not placed in the middle of the previously traced path
         // Also, do not check for an already checked position
-        if pos != obstacle && !obstacles.contains(&obstacle) {
+        if !prev_path.contains(&obstacle) && !obstacles.contains(&obstacle) {
             let mut visited_loop = Vec::with_capacity(walkable.len());
             visited_loop.push((pos, dir));
             dir = dir.next();
