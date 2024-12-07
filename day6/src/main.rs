@@ -1,11 +1,11 @@
 use std::{env,fs,process};
-use std::collections::HashSet;
+use std::collections::{HashSet,VecDeque,};
 
-#[derive(Debug)]
+#[derive(Debug,Clone,Copy,Hash,PartialEq,Eq)]
 enum Dir { N, S, W, E, }
 
 impl Dir {
-    fn next(self) -> Self {
+    fn next(&self) -> Self {
         match self {
             Self::N => Self::E,
             Self::E => Self::S,
@@ -24,10 +24,11 @@ impl Dir {
     }
 }
 
-fn run1(input: &str) -> usize {
+fn read_input(input: &str) -> (((isize, isize), Dir), HashSet<(isize, isize)>) {
     // Read input
     let mut guard = None;
-    let mut walkable = HashSet::new();
+    let cap = input.lines().map(|line| line.chars().count()).sum();
+    let mut walkable = HashSet::with_capacity(cap);
     for (y, line) in input.lines().enumerate() {
         let y = y as isize;
         for (x, c) in line.chars().enumerate() {
@@ -36,16 +37,25 @@ fn run1(input: &str) -> usize {
                 '#' => {},
                 '.' => { walkable.insert((y,x)); },
                 '^' => {
-                    guard.insert(((y,x), Dir::N));
+                    guard = Some(((y,x), Dir::N));
                     walkable.insert((y,x));
                 },
                 _ => unreachable!(),
             }
         }
     }
-    let mut guard = guard.unwrap();
+    if let Some(guard) = guard {
+        (guard, walkable)
+    } else {
+        panic!("Guard not found in the input!");
+    }
+}
+
+fn run1(input: &str) -> usize {
+    let (mut guard, walkable) = read_input(input);
     let width = *walkable.iter().map(|(_, x)| x).max().unwrap();
     let height = *walkable.iter().map(|(y, _)| y).max().unwrap();
+    let out_of_bounds = move |pos: &(isize, isize)| pos.0 < 0 || pos.0 > height || pos.1 < 0 || pos.1 > width;
 
     // Walk
     let mut visited = HashSet::with_capacity(walkable.len());
@@ -55,7 +65,7 @@ fn run1(input: &str) -> usize {
         if walkable.contains(&next) {
             guard.0 = next;
         } else {
-            if next.0 < 0 || next.0 > height || next.1 < 0 || next.1 > width {
+            if out_of_bounds(&next) {
                 break;
             } else {
                 guard.1 = guard.1.next();
@@ -66,8 +76,71 @@ fn run1(input: &str) -> usize {
     visited.len()
 }
 
-fn run2(input: &str) -> u32 {
-    0
+fn run2(input: &str) -> usize {
+    // Read input
+    let (mut guard, walkable) = read_input(input);
+    let width = *walkable.iter().map(|(_, x)| x).max().unwrap();
+    let height = *walkable.iter().map(|(y, _)| y).max().unwrap();
+    let out_of_bounds = move |pos: &(isize, isize)| pos.0 < 0 || pos.0 > height || pos.1 < 0 || pos.1 > width;
+
+    // Walk
+    let mut guard_path = VecDeque::with_capacity(walkable.len());
+    loop {
+        guard_path.push_back((guard.0, guard.1));
+        let next = guard.1.walk(&guard.0);
+        if walkable.contains(&next) {
+            guard.0 = next;
+        } else {
+            if out_of_bounds(&next) {
+                break;
+            } else {
+                guard.1 = guard.1.next();
+            }
+        }
+    }
+
+    // Find possible obstacle locations
+    let (mut pos, mut dir) = guard_path.pop_front().unwrap();
+    let start = pos;
+    let mut obstacles = HashSet::with_capacity(walkable.len());
+    obstacles.insert(start);
+    while let Some((obstacle, ndir)) = guard_path.pop_front() {
+        // Check that the starting position does not coincide with the new obstacle
+        // Also, do not check for an already checked position
+        if pos != obstacle && !obstacles.contains(&obstacle) {
+            let mut visited_loop = Vec::with_capacity(walkable.len());
+            visited_loop.push((pos, dir));
+            dir = dir.next();
+            // Simulate the guard walk with this new obstacle
+            loop {
+                let next = dir.walk(&pos);
+                if out_of_bounds(&next) {
+                    // Walked out of the map, this is not a loop
+                    break;
+                } else if next == obstacle {
+                    // Hit the new obstacle: turn right
+                    visited_loop.push((pos, dir));
+                    dir = dir.next();
+                } else if visited_loop.iter().any(|&(v, vd)| (v, vd) == (next, dir)) {
+                    // We are repeating a position, closed a loop!
+                    obstacles.insert(obstacle);
+                    break;
+                } else if walkable.contains(&next) {
+                    // There is no obstacle
+                    pos = next;
+                } else {
+                    // Hit an already existing obstacle
+                    visited_loop.push((pos, dir));
+                    dir = dir.next();
+                }
+            }
+        }
+        // Update starting position
+        (pos, dir) = (obstacle, ndir);
+    }
+    obstacles.remove(&start);
+
+    obstacles.len()
 }
 
 fn main() {
@@ -84,7 +157,7 @@ fn main() {
 
     let input = fs::read_to_string(filepath).unwrap();
 
-    let res = run1(&input);
+    let res = run2(&input);
     println!("{res}");
 }
 
