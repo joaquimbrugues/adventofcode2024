@@ -55,7 +55,7 @@ fn run1(input: &str) -> usize {
     let (mut guard, walkable) = read_input(input);
     let width = *walkable.iter().map(|(_, x)| x).max().unwrap();
     let height = *walkable.iter().map(|(y, _)| y).max().unwrap();
-    let out_of_bounds = move |pos: &(isize, isize)| pos.0 < 0 || pos.0 > height || pos.1 < 0 || pos.1 > width;
+    let out_of_bounds = |pos: &(isize, isize)| pos.0 < 0 || pos.0 > height || pos.1 < 0 || pos.1 > width;
 
     // Walk
     let mut visited = HashSet::with_capacity(walkable.len());
@@ -81,7 +81,7 @@ fn run2(input: &str) -> usize {
     let (mut guard, walkable) = read_input(input);
     let width = *walkable.iter().map(|(_, x)| x).max().unwrap();
     let height = *walkable.iter().map(|(y, _)| y).max().unwrap();
-    let out_of_bounds = move |pos: &(isize, isize)| pos.0 < 0 || pos.0 > height || pos.1 < 0 || pos.1 > width;
+    let out_of_bounds = |pos: &(isize, isize)| pos.0 < 0 || pos.0 > height || pos.1 < 0 || pos.1 > width;
 
     // Walk
     let mut guard_path = VecDeque::with_capacity(walkable.len());

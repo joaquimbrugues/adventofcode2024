@@ -24,7 +24,7 @@ fn run1(input: &str) -> usize {
     };
     let height = input.lines().count() as isize;
     let width = input.lines().next().unwrap().chars().count() as isize;
-    let inside_bounds = move |point: &(isize, isize)| point.0 >= 0 && point.1 >= 0 && point.0 < height && point.1 < width;
+    let inside_bounds = |point: &(isize, isize)| point.0 >= 0 && point.1 >= 0 && point.0 < height && point.1 < width;
 
     let n = antennas.len();
     let mut answers = HashSet::with_capacity(n * (n - 1));
@@ -46,7 +46,7 @@ fn run1(input: &str) -> usize {
 
 fn antinodes2(x: &(isize, isize), y: &(isize, isize), height: isize, width: isize) -> HashSet<(isize, isize)> {
     let mut res = HashSet::new();
-    let inside_bounds = move |point: &(isize, isize)| point.0 >= 0 && point.1 >= 0 && point.0 < height && point.1 < width;
+    let inside_bounds = |point: &(isize, isize)| point.0 >= 0 && point.1 >= 0 && point.0 < height && point.1 < width;
     let v = (y.0 - x.0, y.1 - x.1);
     let mut p = *x;
     while inside_bounds(&p) {
