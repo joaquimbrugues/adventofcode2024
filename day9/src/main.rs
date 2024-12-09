@@ -94,8 +94,8 @@ fn run2(input: &str) -> usize {
             Mem::Free(mut s) => {
                 while let Some((ind, mm)) = memory.iter().enumerate().rev().filter(|(_, mem)| !mem.free() && mem.len() <= s).nth(0) {
                     s -= mm.len();
-                    memory.insert(ind+1, Mem::Free(mm.len()));
-                    defrag.push(memory.remove(ind).unwrap());
+                    defrag.push(*mm);
+                    memory[ind] = Mem::Free(mm.len());
                 }
                 if s > 0 {
                     defrag.push(Mem::Free(s));
