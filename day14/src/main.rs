@@ -70,9 +70,9 @@ fn print_map(map: &HashSet<(usize, usize)>, height: isize, width: isize) {
     for y in 0..height {
         for x in 0..width {
             if map.contains(&(y,x)) {
-                print!("#");
+                print!("🤖");
             } else {
-                print!(".");
+                print!("  ");
             }
         }
         print!("\n");
