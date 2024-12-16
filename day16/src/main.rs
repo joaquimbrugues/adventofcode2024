@@ -29,16 +29,12 @@ impl Dir {
 struct Pos { coord: (usize, usize), ori: Dir, score: u32, }
 
 impl Pos {
-    fn walk(&mut self) {
-        self.coord = self.ori.walk(self.coord);
-        self.score += 1;
-    }
-
-    fn turn(&self) -> [Self; 2] {
+    fn neighbours(&self) -> [Self; 3] {
         let oris = self.ori.turn();
         [
-            Self { coord: self.coord, ori: oris[0], score: self.score + 1000 },
-            Self { coord: self.coord, ori: oris[1], score: self.score + 1000 },
+            Self { coord: self.ori.walk(self.coord), ori: self.ori, score: self.score + 1 },
+            Self { coord: oris[0].walk(self.coord), ori: oris[0], score: self.score + 1001 },
+            Self { coord: oris[1].walk(self.coord), ori: oris[1], score: self.score + 1001 },
         ]
     }
 }
@@ -86,17 +82,16 @@ fn run1(input: &str) -> u32 {
 
     let ini = Pos { coord: start, ori: Dir::E, score: 0 };
     let mut pqueue = BinaryHeap::from([ini]);
-    let mut visited = HashSet::from([ini]);
+    let mut visited = HashSet::from([ini.coord]);
 
-    while let Some(mut pos) = pqueue.pop() {
+    while let Some(pos) = pqueue.pop() {
         if pos.coord == end {
             return pos.score;
         } else {
-            let [left, right] = pos.turn();
-            pos.walk();
-            for p in [pos, left, right] {
-                if walkable.contains(&p.coord) && !visited.contains(&p) {
-                    visited.insert(p);
+            let neighs = pos.neighbours();
+            for p in neighs {
+                if walkable.contains(&p.coord) && !visited.contains(&p.coord) {
+                    visited.insert(p.coord);
                     pqueue.push(p);
                 }
             }
@@ -148,12 +143,19 @@ fn input1() {
     assert_eq!(res, 78428);
 }
 
-//#[test]
-//fn example2() {
-    //let input = fs::read_to_string("test.txt").unwrap();
-    //let res = run2(&input);
-    //assert_eq!(res,42);
-//}
+#[test]
+fn example1p2() {
+    let input = fs::read_to_string("test.txt").unwrap();
+    let res = run2(&input);
+    assert_eq!(res, 45);
+}
+
+#[test]
+fn example2p2() {
+    let input = fs::read_to_string("test.txt").unwrap();
+    let res = run2(&input);
+    assert_eq!(res, 64);
+}
 
 //#[test]
 //fn input2() {
