@@ -2,24 +2,24 @@ use std::{env,fs,process};
 
 
 struct Computer<'a> {
-    regA: u64,
-    regB: u64,
-    regC: u64,
+    reg_a: u64,
+    reg_b: u64,
+    reg_c: u64,
     instructions: &'a [u8],
     output: Vec<u8>,
 }
 
 impl<'a> Computer<'a> {
-    fn new(regA: u64, regB: u64, regC: u64, instructions: &'a [u8]) -> Self {
-        Self { regA, regB, regC, instructions, output: vec![], }
+    fn new(reg_a: u64, reg_b: u64, reg_c: u64, instructions: &'a [u8]) -> Self {
+        Self { reg_a, reg_b, reg_c, instructions, output: vec![], }
     }
 
     fn resolve_combo(&self, code: u8) -> u64 {
         match code {
             0..=3 => code as u64,
-            4 => self.regA,
-            5 => self.regB,
-            6 => self.regC,
+            4 => self.reg_a,
+            5 => self.reg_b,
+            6 => self.reg_c,
             _ => panic!("Unexpected combo code {code}"),
         }
     }
@@ -35,22 +35,22 @@ impl<'a> Computer<'a> {
             match self.instructions[inptr] {
                 // ADV
                 0 => {
-                    self.regA >>= self.resolve_combo(operand);
+                    self.reg_a >>= self.resolve_combo(operand);
                     inptr += 2;
                 },
                 // BXL
                 1 => {
-                    self.regB ^= operand as u64;
+                    self.reg_b ^= operand as u64;
                     inptr += 2;
                 }
                 // BST
                 2 => {
-                    self.regB = self.resolve_combo(operand) % 8;
+                    self.reg_b = self.resolve_combo(operand) % 8;
                     inptr += 2;
                 },
                 // JNZ
                 3 => {
-                    if self.regA == 0 {
+                    if self.reg_a == 0 {
                         inptr += 2;
                     } else {
                         inptr = operand as usize;
@@ -58,7 +58,7 @@ impl<'a> Computer<'a> {
                 }
                 // BXC
                 4 => {
-                    self.regB ^= self.regC;
+                    self.reg_b ^= self.reg_c;
                     inptr += 2;
                 },
                 // OUT
@@ -69,12 +69,12 @@ impl<'a> Computer<'a> {
                 },
                 // BDV
                 6 => {
-                    self.regB = self.regA >> self.resolve_combo(operand);
+                    self.reg_b = self.reg_a >> self.resolve_combo(operand);
                     inptr += 2;
                 },
                 //CDV
                 7 => {
-                    self.regC = self.regA >> self.resolve_combo(operand);
+                    self.reg_c = self.reg_a >> self.resolve_combo(operand);
                     inptr += 2;
                 }
                 _ => unreachable!(),
