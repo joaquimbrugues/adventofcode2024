@@ -37,13 +37,20 @@ fn bfs(obstacles: &HashSet<(isize, isize)>, grid_size: isize, start: (isize, isi
     None
 }
 
-fn run1(input: &str, grid_size: usize, fallen: usize) -> usize {
+fn run1(input: &str, grid_size: isize, fallen: usize) -> usize {
     let obstacles = make_map(input, fallen);
-    bfs(&obstacles, grid_size as isize, (0,0), (grid_size as isize - 1, grid_size as isize - 1)).unwrap()
+    bfs(&obstacles, grid_size, (0,0), (grid_size - 1, grid_size - 1)).unwrap()
 }
 
-fn run2(input: &str, grid_size: usize) -> String {
-    String::new()
+fn run2(input: &str, grid_size: isize, skip: usize) -> (isize, isize) {
+    let mut obstacles = make_map(input, skip);
+    for bit in input.lines().skip(skip).map(|line| { let (t1, t2) = line.split_once(',').unwrap(); (t1.parse().unwrap(), t2.parse().unwrap()) }) {
+        obstacles.insert(bit);
+        if bfs(&obstacles, grid_size, (0,0), (grid_size - 1, grid_size - 1)).is_none() {
+            return bit;
+        }
+    }
+    unreachable!();
 }
 
 fn main() {
@@ -60,8 +67,8 @@ fn main() {
 
     let input = fs::read_to_string(filepath).unwrap();
 
-    let res = run1(&input, 71, 1024);
-    println!("{res}");
+    let res = run2(&input, 71, 1024);
+    println!("{res:?}");
 }
 
 #[test]
@@ -81,13 +88,13 @@ fn input1() {
 #[test]
 fn example2() {
     let input = fs::read_to_string("test.txt").unwrap();
-    let res = run2(&input, 7);
-    assert_eq!(res, "6,1");
+    let res = run2(&input, 7, 12);
+    assert_eq!(res, (6,1));
 }
 
-//#[test]
-//fn input2() {
-    //let input = fs::read_to_string("input.txt").unwrap();
-    //let res = run2(&input);
-    //assert_eq!(res,42);
-//}
+#[test]
+fn input2() {
+    let input = fs::read_to_string("input.txt").unwrap();
+    let res = run2(&input, 71, 1024);
+    assert_eq!(res, (64,54));
+}
