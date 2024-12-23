@@ -48,9 +48,15 @@ fn run2(input: &str) -> String {
     });
 
     let mut best_clique = best_clique.unwrap();
+    let mut cliques: HashSet<BTreeSet<_>> = HashSet::new();
+
     three_cycles.into_iter().for_each(|cycle| {
         // All nodes in a clique better that best_clique with length `n` must have degree strictly greater that `n - 1`
-        if cycle.iter().all(|&n| graph.get(n).unwrap().len() >= best_clique.len()) {
+        if cycle.iter().all(|&n| graph.get(n).unwrap().len() >= best_clique.len())
+            // This optimization moves us from ~1300ms to 250ms:
+            // Save visited cliques and check that our cycle is not contained in any of them
+            && !cliques.iter().any(|clique| cycle.iter().all(|n| clique.contains(n)))
+        {
             // Search for a better clique
             let mut clique = cycle.clone();
             let mut seen: HashSet<_> = cycle.iter().copied().collect();
@@ -70,6 +76,11 @@ fn run2(input: &str) -> String {
                     }
                 }
             }
+
+            if clique.len() > 3 {
+                cliques.insert(clique.clone());
+            }
+
             if clique.len() > best_clique.len() {
                 best_clique = clique;
             }
