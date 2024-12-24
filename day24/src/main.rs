@@ -1,6 +1,7 @@
 use std::{env,fs,process,fmt};
-use std::collections::HashMap;
+use std::collections::{HashMap,BTreeSet};
 
+#[derive(Clone,Copy,PartialEq,Eq,Hash)]
 enum Op { Xor, Or, And, }
 
 impl fmt::Debug for Op {
@@ -84,8 +85,104 @@ fn run1(input: &str) -> u64 {
     res
 }
 
-fn run2(input: &str) -> u32 {
-    0
+// Following the logic from https://www.reddit.com/r/adventofcode/comments/1hla5ql/2024_day_24_part_2_a_guide_on_the_idea_behind_the/
+fn run2(input: &str) -> String {
+    let (_, second) = input.split_once("\n\n").unwrap();
+    let mut gates: HashMap<&str, (&str, Op, &str)> = second.lines().map(|line| {
+        let (rest, label) = line.split_once(" -> ").unwrap();
+        let mut tokens = rest.split_whitespace();
+        (label, (tokens.next().unwrap(), tokens.next().unwrap().into(), tokens.next().unwrap()))
+    }).collect();
+
+    let mut incorrect_z = BTreeSet::new();
+    let mut incorrect_inter = BTreeSet::new();
+    gates.iter().for_each(|(&res, &(l, op, r))| {
+        if res != "z45" && res.starts_with('z') {
+            if op != Op::Xor {
+                incorrect_z.insert(res);
+            }
+        } else if !(l.starts_with('x') || l.starts_with('y') || r.starts_with('x') || r.starts_with('y')) {
+            if op == Op::Xor {
+                incorrect_inter.insert(res);
+            }
+        }
+    });
+    let exchange: HashMap<&str, String> = incorrect_inter.iter().map(|&node| {
+        let mut child = node;
+        while !child.starts_with('z') {
+            let children: Vec<_> = gates.iter().filter(|(_, &(l, _, r))| {
+                l == child || r == child
+            }).collect();
+            child = match children.len() {
+                1 => children[0].0,
+                2 => {
+                    if children[0].1.1 == Op::Xor {
+                        children[0].0
+                    } else if children[1].1.1 == Op::Xor {
+                        children[1].0
+                    } else {
+                        panic!("Some assumption was wrong");
+                    }
+                },
+                _ => panic!("Unexpected gate for node {child}: {children:?}"),
+            };
+        }
+        let mut num = child.strip_prefix('z').unwrap().parse::<u8>().unwrap();
+        num -= 1;
+        let znode = format!("z{num:0>2}");
+        assert!(incorrect_z.contains(znode.as_str()));
+        (node, znode)
+    }).collect();
+
+    exchange.into_iter().for_each(|(node, znode)| {
+        let (&znode, &val) = gates.get_key_value(znode.as_str()).unwrap();
+        let val = gates.insert(node, val).unwrap();
+        gates.insert(znode, val);
+    });
+    let mut incorrect = incorrect_inter;
+    incorrect = incorrect.union(&incorrect_z).copied().collect();
+
+    // Start the count at 1 to avoid including "z00" ('cause I'm a hack)
+    for i in 1..44 {
+        let (lx, ly) = (format!("x{i:0>2}"), format!("y{i:0>2}"));
+        let res: HashMap<_,_> = gates.iter().filter(|(_, &(l,_,r))| (lx == l && ly == r) || (lx == r && ly == l)).map(|(&res, &(_, op, _))| (op, res)).collect();
+        assert_eq!(res.len(), 2);
+        for (op, node) in res {
+            match op {
+                Op::And => {
+                    match gates.iter().filter(|(_, &(l, op, r))| {
+                        (l == node || r == node) && op == Op::Or
+                    }).count() {
+                        0 => { incorrect.insert(node); },
+                        1 => {},
+                        _ => panic!("Incorrect assumption"),
+                    }
+                },
+                Op::Xor => {
+                    match gates.iter().filter(|(_, &(l, op, r))| {
+                        (l == node || r == node) && op == Op::Xor
+                    }).count() {
+                        0 => { incorrect.insert(node); },
+                        1 => {},
+                        _ => panic!("Incorrect assumption"),
+                    }
+                },
+                _ => unreachable!(),
+            }
+        }
+        if incorrect.len() > 6 {
+            assert_eq!(incorrect.len(), 8);
+            break;
+        }
+    }
+
+    incorrect.into_iter().fold(String::new(), |acc, node| {
+        if acc.len() == 0 {
+            String::from(node)
+        } else {
+            format!("{acc},{node}")
+        }
+    })
 }
 
 fn main() {
@@ -102,7 +199,7 @@ fn main() {
 
     let input = fs::read_to_string(filepath).unwrap();
 
-    let res = run1(&input);
+    let res = run2(&input);
     println!("{res}");
 }
 
